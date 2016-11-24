@@ -52,7 +52,7 @@ static void handle_clock_tick( struct tm *tick_time, TimeUnits units_changed ) {
   HAND_LAYER_DATA *seconds_layer_data = (HAND_LAYER_DATA *) layer_get_data( seconds_layer );
   
   seconds_layer_data->current_end_pt = seconds_layer_data->next_end_pt;
-  uint32_t seconds_angle = ( TRIG_MAX_ANGLE * tm_time.tm_sec ) / 60;
+  uint32_t seconds_angle = ( TRIG_MAX_ANGLE * tm_time.tm_sec ) / 30;
   
   seconds_layer_data->next_end_pt.x = ( sin_lookup( seconds_angle ) * seconds_layer_data->length / TRIG_MAX_RATIO ) + seconds_layer_data->center_pt.x;
   seconds_layer_data->next_end_pt.y = ( -cos_lookup( seconds_angle ) * seconds_layer_data->length / TRIG_MAX_RATIO ) + seconds_layer_data->center_pt.y;
@@ -127,3 +127,5 @@ void clock_init( Window *window ){
 void clock_deinit( void ) {
   if ( seconds_layer) layer_destroy( seconds_layer );
 }
+
+
