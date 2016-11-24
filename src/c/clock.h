@@ -14,12 +14,14 @@
 #define SECONDS_RECT_FRAME ( GRect( SECONDS_LAYER_POS_X, SECONDS_LAYER_POS_Y, SECONDS_LAYER_WIDTH, SECONDS_LAYER_HEIGHT ) )
 
 #define SECONDS_HAND_LENGTH ( PBL_DISPLAY_WIDTH / 2 - 5 )
+#define SECONDS_HAND_TAIL_LENGTH 20
 #define SECONDS_HAND_THK 1
 #define SECONDS_HUB_RADIUS 3
 
 typedef struct {
   uint32_t colour;
   uint16_t length;
+  uint16_t tail_length;
   uint8_t width;
   uint16_t hub_radius;
   GRect bounds;

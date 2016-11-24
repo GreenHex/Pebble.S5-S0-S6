@@ -4,4 +4,4 @@
 
 #include <pebble.h>
 
-#define DEBUG
+// #define DEBUG
