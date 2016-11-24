@@ -1,0 +1,26 @@
+{
+    "author": "The Resetter",
+    "dependencies": {},
+    "keywords": [],
+    "name": "s5-s0-s6",
+    "pebble": {
+        "displayName": "S5-S0-S6",
+        "enableMultiJS": true,
+        "messageKeys": [],
+        "projectType": "native",
+        "resources": {
+            "media": []
+        },
+        "sdkVersion": "3",
+        "targetPlatforms": [
+            "aplite",
+            "basalt",
+            "diorite"
+        ],
+        "uuid": "1b0de763-f159-488d-b69f-47fc1b91d5a1",
+        "watchapp": {
+            "watchface": true
+        }
+    },
+    "version": "1.0.0"
+}
