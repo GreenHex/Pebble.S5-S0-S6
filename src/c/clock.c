@@ -9,22 +9,22 @@ static Layer *window_layer = 0;
 static Layer *seconds_layer = 0;
 tm tm_time;
 
-static void second_hand_uint32_setter( void *subject, uint32_t angle ) {
-  ( ( HAND_LAYER_DATA *) layer_get_data( (Layer *) subject ) )->current_angle = angle;
+static void second_hand_gpoint_setter( void *subject, GPoint pt ) {
+  ( ( HAND_LAYER_DATA *) layer_get_data( (Layer *) subject ) )->current_end_pt = pt;
   layer_mark_dirty( (Layer *) subject );
 }
 
-static uint32_t second_hand_uint32_getter( void *subject ) {
-  return ( ( HAND_LAYER_DATA *) layer_get_data( (Layer *) subject ) )->current_angle;
+static GPoint second_hand_gpoint_getter( void *subject ) {
+  return ( ( HAND_LAYER_DATA *) layer_get_data( (Layer *) subject ) )->current_end_pt;
 }
 
 static const PropertyAnimationImplementation second_hand_animation_implementation = {
   .base = {
-    .update = (AnimationUpdateImplementation) property_animation_update_uint32,
+    .update = (AnimationUpdateImplementation) property_animation_update_gpoint,
   },
     .accessors = {
-      .setter = { .uint32 = (const UInt32Setter) second_hand_uint32_setter },
-      .getter = { .uint32 = (const UInt32Getter) second_hand_uint32_getter },
+      .setter = { .gpoint = (const GPointSetter) second_hand_gpoint_setter },
+      .getter = { .gpoint = (const GPointGetter) second_hand_gpoint_getter },
   },
 };
 
@@ -32,10 +32,10 @@ static void start_seconds_animation( void ) {
   HAND_LAYER_DATA *seconds_layer_data = (HAND_LAYER_DATA *) layer_get_data( seconds_layer );
   
   PropertyAnimation *seconds_hand_prop_animation = property_animation_create( &second_hand_animation_implementation, (void *) seconds_layer, NULL, NULL );
-  property_animation_from( seconds_hand_prop_animation, (void *) &( seconds_layer_data->current_angle ),
-                          sizeof( seconds_layer_data->current_angle ), true );
-  property_animation_to( seconds_hand_prop_animation, (void *) &( seconds_layer_data->next_angle ),
-                        sizeof( seconds_layer_data->next_angle ), true );
+  property_animation_from( seconds_hand_prop_animation, (void *) &( seconds_layer_data->current_end_pt ),
+                          sizeof( seconds_layer_data->current_end_pt ), true );
+  property_animation_to( seconds_hand_prop_animation, (void *) &( seconds_layer_data->next_end_pt ),
+                        sizeof( seconds_layer_data->next_end_pt ), true );
   Animation *seconds_hand_animation = property_animation_get_animation( seconds_hand_prop_animation );
   animation_set_curve( seconds_hand_animation, AnimationCurveLinear );
   animation_set_delay( seconds_hand_animation, 0 );
@@ -49,12 +49,14 @@ static void handle_clock_tick( struct tm *tick_time, TimeUnits units_changed ) {
   #ifdef DEBUG
   APP_LOG( APP_LOG_LEVEL_INFO, "clock.c: handle_clock_tick(): %d:%02d:%02d", tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec );
   #endif
-  // ( ( HAND_LAYER_DATA *) layer_get_data( seconds_layer ) )->current_angle = ( ( HAND_LAYER_DATA *) layer_get_data( seconds_layer ) )->next_angle;
-  if ( tm_time.tm_sec == 0 ) {
-    ( ( HAND_LAYER_DATA *) layer_get_data( seconds_layer ) )->next_angle = 0;
-  } else {
-    ( ( HAND_LAYER_DATA *) layer_get_data( seconds_layer ) )->next_angle = TRIG_MAX_ANGLE * tm_time.tm_sec / 60;
-  }
+  HAND_LAYER_DATA *seconds_layer_data = (HAND_LAYER_DATA *) layer_get_data( seconds_layer );
+  
+  seconds_layer_data->current_end_pt = seconds_layer_data->next_end_pt;
+  uint32_t seconds_angle = ( TRIG_MAX_ANGLE * tm_time.tm_sec ) / 60;
+  
+  seconds_layer_data->next_end_pt.x = ( sin_lookup( seconds_angle ) * seconds_layer_data->length / TRIG_MAX_RATIO ) + seconds_layer_data->center_pt.x;
+  seconds_layer_data->next_end_pt.y = ( -cos_lookup( seconds_angle ) * seconds_layer_data->length / TRIG_MAX_RATIO ) + seconds_layer_data->center_pt.y;
+ 
   start_seconds_animation();
 }
 
@@ -67,12 +69,10 @@ static void draw_clock_hand( HAND_DRAW_PARAMS *pDP ) {
   // hand outline
   graphics_context_set_stroke_color( pDP->ctx, pDP->hand_outline_color );
   graphics_context_set_stroke_width( pDP->ctx, pDP->hand_width + 2);
-  graphics_draw_line( pDP->ctx, pDP->center_pt, pDP->from_pt );
   graphics_draw_line( pDP->ctx, pDP->center_pt, pDP->to_pt );
   // hand
   graphics_context_set_stroke_color( pDP->ctx, pDP->hand_color );
   graphics_context_set_stroke_width( pDP->ctx, pDP->hand_width );
-  graphics_draw_line( pDP->ctx, pDP->center_pt, pDP->from_pt );
   graphics_draw_line( pDP->ctx, pDP->center_pt, pDP->to_pt );
   // dot
   graphics_context_set_fill_color( pDP->ctx, pDP->dot_color );
@@ -86,20 +86,11 @@ static void seconds_hand_layer_update_proc( Layer *layer, GContext *ctx ) {
   
   HAND_LAYER_DATA *seconds_layer_data = (HAND_LAYER_DATA *) layer_get_data( seconds_layer );
   
-  GPoint center_pt = grect_center_point( &layer_bounds );
-  GPoint end_pt;
-  GPoint tail_end_pt;
-  
-  end_pt.x = ( sin_lookup( seconds_layer_data->current_angle ) * seconds_layer_data->length / TRIG_MAX_RATIO ) + center_pt.x;
-  end_pt.y = ( -cos_lookup( seconds_layer_data->current_angle ) * seconds_layer_data->length / TRIG_MAX_RATIO ) + center_pt.y;
-  tail_end_pt.x = ( sin_lookup( seconds_layer_data->current_angle - TRIG_MAX_ANGLE / 2 ) * seconds_layer_data->tail_length / TRIG_MAX_RATIO ) + center_pt.x;
-  tail_end_pt.y = ( -cos_lookup( seconds_layer_data->current_angle - TRIG_MAX_ANGLE / 2 ) * seconds_layer_data->tail_length / TRIG_MAX_RATIO ) + center_pt.y;
-  
   HAND_DRAW_PARAMS hand_draw_params = (HAND_DRAW_PARAMS) {
     .ctx = ctx,
-    .center_pt = center_pt,
-    .from_pt = end_pt,
-    .to_pt = tail_end_pt,
+    .center_pt = grect_center_point( &layer_bounds ),
+    .from_pt = grect_center_point( &layer_bounds ),
+    .to_pt = seconds_layer_data->current_end_pt,
     .hand_width = seconds_layer_data->width,
     .hand_color = GColorFromHEX( seconds_layer_data->colour ),
     .hand_outline_color = GColorWhite,
@@ -122,10 +113,11 @@ void clock_init( Window *window ){
   seconds_layer_data->length = SECONDS_HAND_LENGTH;
   seconds_layer_data->tail_length = SECONDS_HAND_TAIL_LENGTH;
   seconds_layer_data->width = SECONDS_HAND_THK;
-  seconds_layer_data->bounds = SECONDS_RECT_FRAME;
   seconds_layer_data->hub_radius = SECONDS_HUB_RADIUS;
-  seconds_layer_data->current_angle = 0;
-  seconds_layer_data->next_angle = 0;
+  seconds_layer_data->bounds = SECONDS_RECT_FRAME;
+  seconds_layer_data->center_pt = GPoint( PBL_DISPLAY_WIDTH/2, PBL_DISPLAY_WIDTH/2 );
+  seconds_layer_data->current_end_pt = GPoint( 0, 0 );
+  seconds_layer_data->next_end_pt = GPoint( 0, 0 );
   layer_set_update_proc( seconds_layer, seconds_hand_layer_update_proc );
   layer_add_child( window_layer, seconds_layer );
   

@@ -25,8 +25,9 @@ typedef struct {
   uint8_t width;
   uint16_t hub_radius;
   GRect bounds;
-  uint32_t current_angle;
-  uint32_t next_angle;
+  GPoint center_pt;
+  GPoint current_end_pt;
+  GPoint next_end_pt;
 } HAND_LAYER_DATA;
 
 typedef struct {
