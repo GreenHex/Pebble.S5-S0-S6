@@ -275,27 +275,31 @@ void clock_init( Window *window ){
   
   minutes_layer = layer_create_with_data( MINUTES_RECT_FRAME, sizeof( HAND_LAYER_DATA ) );
   minutes_layer_data = (HAND_LAYER_DATA *) layer_get_data( minutes_layer ); 
-  minutes_layer_data->colour = PBL_IF_COLOR_ELSE( 0xFF0000, 0x000000 );
-  minutes_layer_data->length = MINUTES_HAND_LENGTH;
-  minutes_layer_data->tail_length = MINUTES_HAND_TAIL_LENGTH;
-  minutes_layer_data->width = MINUTES_HAND_THK;
-  minutes_layer_data->bounds = MINUTES_RECT_FRAME;
-  minutes_layer_data->hub_radius = MINUTES_HUB_RADIUS;
-  minutes_layer_data->current_angle = 0;
-  minutes_layer_data->next_angle = 0;
+  *minutes_layer_data = (HAND_LAYER_DATA) {
+    .colour = PBL_IF_COLOR_ELSE( 0xFF0000, 0x000000 ),
+    .length = MINUTES_HAND_LENGTH,
+    .tail_length = MINUTES_HAND_TAIL_LENGTH,
+    .width = MINUTES_HAND_THK,
+    .bounds = MINUTES_RECT_FRAME,
+    .hub_radius = MINUTES_HUB_RADIUS,
+    .current_angle = 0,
+    .next_angle = 0,
+  };
   layer_set_update_proc( minutes_layer, minutes_hand_layer_update_proc );
   layer_add_child( outline_layer, minutes_layer );
 
   seconds_layer = layer_create_with_data( SECONDS_RECT_FRAME, sizeof( HAND_LAYER_DATA ) );
   seconds_layer_data = (HAND_LAYER_DATA *) layer_get_data( seconds_layer ); 
-  seconds_layer_data->colour = PBL_IF_COLOR_ELSE( 0x000000, 0x000000 );
-  seconds_layer_data->length = SECONDS_HAND_LENGTH;
-  seconds_layer_data->tail_length = SECONDS_HAND_TAIL_LENGTH;
-  seconds_layer_data->width = SECONDS_HAND_THK;
-  seconds_layer_data->bounds = SECONDS_RECT_FRAME;
-  seconds_layer_data->hub_radius = SECONDS_HUB_RADIUS;
-  seconds_layer_data->current_angle = 0;
-  seconds_layer_data->next_angle = 0;
+  *seconds_layer_data = (HAND_LAYER_DATA) {
+    .colour = PBL_IF_COLOR_ELSE( 0x000000, 0x000000 ),
+    .length = SECONDS_HAND_LENGTH,
+    .tail_length = SECONDS_HAND_TAIL_LENGTH,
+    .width = SECONDS_HAND_THK,
+    .bounds = SECONDS_RECT_FRAME,
+    .hub_radius = SECONDS_HUB_RADIUS,
+    .current_angle = 0,
+    .next_angle = 0,
+  };
   layer_set_update_proc( seconds_layer, seconds_hand_layer_update_proc );
   layer_add_child( outline_layer, seconds_layer );
   
