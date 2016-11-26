@@ -13,6 +13,9 @@ static Layer *seconds_dial_layer = 0;
 static Layer *minutes_dial_layer = 0;
 static Layer *seconds_layer = 0;
 static Layer *minutes_layer = 0;
+static TextLayer *label_top_left = 0;
+static TextLayer *label_top_right = 0;
+static TextLayer *label_bottom_right = 0;
 
 static uint32_t seconds = 0;
 static uint32_t minutes = 0;
@@ -76,8 +79,9 @@ static void handle_clock_tick( struct tm *tick_time, TimeUnits units_changed ) {
   if ( units_changed & SECOND_UNIT ) ++seconds;
   if ( units_changed & MINUTE_UNIT ) {
     ++minutes;
-    layer_mark_dirty( minutes_layer );
+    // layer_mark_dirty( minutes_layer );
   }
+  
   #ifdef DEBUG
   APP_LOG( APP_LOG_LEVEL_INFO, "clock.c: handle_clock_tick(): %d:%02d:%02d", tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec );
   #endif
@@ -206,6 +210,16 @@ static void seconds_hand_layer_update_proc( Layer *layer, GContext *ctx ) {
   draw_clock_hand( &hand_draw_params );
 }
 
+static void make_label( TextLayer **p_label, GRect rect,  Layer* parent_layer, const char* str, GFont txt_font, GTextAlignment alignment ) {
+  *p_label = text_layer_create( rect );
+  text_layer_set_background_color( *p_label, GColorClear );
+  text_layer_set_text_color( *p_label, GColorBlack );
+  text_layer_set_text_alignment( *p_label, alignment );
+  text_layer_set_font( *p_label, txt_font );
+  text_layer_set_text( *p_label, str );
+  layer_add_child( parent_layer, text_layer_get_layer( *p_label ) );
+}
+
 void clock_init( Window *window ){
   window_layer = window_get_root_layer( window );
   window_set_background_color( window, GColorLightGray );
@@ -251,10 +265,19 @@ void clock_init( Window *window ){
   layer_set_update_proc( seconds_layer, seconds_hand_layer_update_proc );
   layer_add_child( outline_layer, seconds_layer );
   
+  GFont txt_font = fonts_get_system_font( FONT_KEY_GOTHIC_14 );
+  
+  make_label( &label_top_left, LABEL_TOP_LEFT_RECT, window_layer, "  EXIT", txt_font, GTextAlignmentLeft );
+  make_label( &label_top_right, LABEL_TOP_RIGHT_RECT, window_layer, "RESET  ", txt_font, GTextAlignmentRight );
+  make_label( &label_bottom_right, LABEL_BOTTOM_RIGHT_RECT, window_layer, "START/STOP  ", txt_font, GTextAlignmentRight );
+    
   tick_timer_service_subscribe( SECOND_UNIT, handle_clock_tick );
 }
 
 void clock_deinit( void ) {
+  if ( label_top_left ) text_layer_destroy( label_top_left );
+  if ( label_top_right ) text_layer_destroy( label_top_right );
+  if ( label_bottom_right ) text_layer_destroy( label_bottom_right );
   if ( minutes_layer ) layer_destroy( minutes_layer );
   if ( seconds_layer ) layer_destroy( seconds_layer );
   if ( minutes_dial_layer ) layer_destroy( minutes_dial_layer );
