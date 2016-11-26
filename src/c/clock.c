@@ -19,6 +19,7 @@ static TextLayer *label_bottom_right = 0;
 
 static uint32_t seconds = 0;
 static uint32_t minutes = 0;
+static bool run_timer = false;
 static tm tm_time;
 
 static void print_pt( char *str, GPoint pt ) {
@@ -221,6 +222,38 @@ static void make_label( TextLayer **p_label, GRect rect,  Layer* parent_layer, c
   layer_add_child( parent_layer, text_layer_get_layer( *p_label ) );
 }
 
+void up_single_click_handler(ClickRecognizerRef recognizer, void *context) {
+  Window *window = (Window *) context;
+  
+  if ( !run_timer ) {
+    seconds = 0;
+    minutes = 0;
+    ( ( HAND_LAYER_DATA *) layer_get_data( seconds_layer ) )->current_angle = 0;
+    ( ( HAND_LAYER_DATA *) layer_get_data( minutes_layer ) )->current_angle = 0;
+    ( ( HAND_LAYER_DATA *) layer_get_data( seconds_layer ) )->next_angle = 0;
+    ( ( HAND_LAYER_DATA *) layer_get_data( minutes_layer ) )->next_angle = 0;
+    layer_mark_dirty( seconds_layer );
+    layer_mark_dirty( minutes_layer );
+  }
+}
+
+void down_single_click_handler(ClickRecognizerRef recognizer, void *context) {
+  Window *window = (Window *) context;
+  
+  run_timer = !run_timer;
+  
+  if ( run_timer ) {
+    tick_timer_service_subscribe( SECOND_UNIT, handle_clock_tick );
+  } else {
+    tick_timer_service_unsubscribe();
+  }
+}
+
+void config_provider( Window *window ) {
+  window_single_click_subscribe( BUTTON_ID_DOWN, down_single_click_handler );
+  window_single_click_subscribe( BUTTON_ID_UP, up_single_click_handler );
+}
+
 void clock_init( Window *window ){
   window_layer = window_get_root_layer( window );
   window_set_background_color( window, GColorLightGray );
@@ -272,7 +305,7 @@ void clock_init( Window *window ){
   make_label( &label_top_right, LABEL_TOP_RIGHT_RECT, window_layer, "RESET ", txt_font, GColorRed, GTextAlignmentRight );
   make_label( &label_bottom_right, LABEL_BOTTOM_RIGHT_RECT, window_layer, "START/STOP ", txt_font, GColorBlue, GTextAlignmentRight );
     
-  tick_timer_service_subscribe( SECOND_UNIT, handle_clock_tick );
+  window_set_click_config_provider( window, (ClickConfigProvider) config_provider );
 }
 
 void clock_deinit( void ) {
