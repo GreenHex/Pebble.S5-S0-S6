@@ -74,8 +74,10 @@ static void start_seconds_animation( void ) {
 static void handle_clock_tick( struct tm *tick_time, TimeUnits units_changed ) {
   tm_time = *tick_time; // copy to global, just for fun, as it is not used
   if ( units_changed & SECOND_UNIT ) ++seconds;
-  if ( units_changed & MINUTE_UNIT ) ++minutes;
-  
+  if ( units_changed & MINUTE_UNIT ) {
+    ++minutes;
+    layer_mark_dirty( minutes_layer );
+  }
   #ifdef DEBUG
   APP_LOG( APP_LOG_LEVEL_INFO, "clock.c: handle_clock_tick(): %d:%02d:%02d", tm_time.tm_hour, tm_time.tm_min, tm_time.tm_sec );
   #endif
@@ -107,6 +109,9 @@ static void draw_clock_hand( HAND_DRAW_PARAMS *pDP ) {
   // dot
   graphics_context_set_fill_color( pDP->ctx, pDP->dot_color );
   graphics_fill_circle( pDP->ctx, pDP->center_pt, pDP->dot_radius - 1 );
+  // center
+  graphics_context_set_fill_color( pDP->ctx, GColorWhite );
+  graphics_fill_circle( pDP->ctx, pDP->center_pt, 1 );
 }
 
 static void outline_layer_update_proc( Layer *layer, GContext *ctx ) {
@@ -138,7 +143,7 @@ static void minutes_hand_layer_update_proc( Layer *layer, GContext *ctx ) {
   
   HAND_LAYER_DATA *minutes_layer_data = (HAND_LAYER_DATA *) layer_get_data( minutes_layer );
   
-  uint32_t min_angle = TRIG_MAX_ANGLE * ( minutes * 4 / 60 ) ;
+  uint32_t min_angle = ( TRIG_MAX_ANGLE * minutes * 4 / 60 ) + ( TRIG_MAX_ANGLE * seconds * 4 / 3600 );
   uint32_t min_tail_angle = min_angle + ( TRIG_MAX_ANGLE / 2 );
   GPoint center_pt = grect_center_point( &layer_bounds );
 
