@@ -9,7 +9,20 @@
         "messageKeys": [],
         "projectType": "native",
         "resources": {
-            "media": []
+            "media": [
+                {
+                    "file": "images/S5-S0-S6 01 Icon.png",
+                    "menuIcon": true,
+                    "name": "APP_ICON",
+                    "targetPlatforms": [
+                        "aplite",
+                        "basalt",
+                        "diorite",
+                        "emery"
+                    ],
+                    "type": "bitmap"
+                }
+            ]
         },
         "sdkVersion": "3",
         "targetPlatforms": [
