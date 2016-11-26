@@ -7,6 +7,8 @@
 
 static Layer *window_layer = 0;
 static Layer *outline_layer = 0;
+static Layer *seconds_dial_layer = 0;
+static Layer *minutes_dial_layer = 0;
 static Layer *seconds_layer = 0;
 static Layer *minutes_layer = 0;
 
@@ -87,12 +89,46 @@ static void outline_layer_update_proc( Layer *layer, GContext *ctx ) {
   graphics_context_set_antialiased( ctx, true );
   graphics_context_set_fill_color( ctx, GColorDarkGray );
   graphics_fill_rect( ctx, layer_bounds, layer_bounds.size.w / 2, GCornersAll );  
+}
+
+static void seconds_dial_update_proc( Layer *layer, GContext *ctx ) {
+  GRect layer_bounds = layer_get_bounds( layer );
   graphics_context_set_antialiased( ctx, true );
   graphics_context_set_fill_color( ctx, GColorWhite );
-  graphics_fill_rect( ctx, SECONDS_RECT_FRAME, layer_bounds.size.w / 2, GCornersAll );
+  graphics_fill_rect( ctx, layer_bounds, layer_bounds.size.w / 2, GCornersAll );
+}
+
+static void minutes_dial_update_proc( Layer *layer, GContext *ctx ) { 
+  GRect layer_bounds = layer_get_bounds( layer );
   graphics_context_set_antialiased( ctx, true );
-  graphics_context_set_fill_color( ctx, GColorLightGray );
-  graphics_fill_rect( ctx, s_RECT_FRAME, layer_bounds.size.w / 2, GCornersAll );
+  graphics_context_set_fill_color( ctx, GColorYellow );
+  graphics_fill_rect( ctx, layer_bounds, layer_bounds.size.w / 2, GCornersAll );
+  graphics_context_set_stroke_color( ctx, GColorLightGray );
+  graphics_context_set_stroke_width( ctx, 1 );
+  graphics_draw_circle( ctx, GPoint( layer_bounds.size.w / 2, layer_bounds.size.h / 2 ), layer_bounds.size.w / 2 - 1 );
+}
+
+static void minutes_hand_layer_update_proc ( Layer *layer, GContext *ctx ) {
+  GRect layer_bounds = layer_get_bounds( layer );
+  HAND_LAYER_DATA *minutes_layer_data = (HAND_LAYER_DATA *) layer_get_data( minutes_layer );
+  
+  GPoint center_pt = grect_center_point( &layer_bounds );
+  GPoint end_pt;
+  GPoint tail_end_pt;
+  
+  HAND_DRAW_PARAMS hand_draw_params = (HAND_DRAW_PARAMS) {
+    .ctx = ctx,
+    .center_pt = center_pt,
+    .from_pt = center_pt,
+    .to_pt = center_pt,
+    .hand_width = minutes_layer_data->width,
+    .hand_color = GColorFromHEX( minutes_layer_data->colour ),
+    .hand_outline_color = GColorWhite,
+    .dot_radius = minutes_layer_data->hub_radius,
+    .dot_color = GColorFromHEX( minutes_layer_data->colour ),
+    .dot_outline_color = GColorWhite
+  };
+  draw_clock_hand( &hand_draw_params );
 }
 
 static void seconds_hand_layer_update_proc( Layer *layer, GContext *ctx ) {
@@ -128,22 +164,36 @@ static void seconds_hand_layer_update_proc( Layer *layer, GContext *ctx ) {
   draw_clock_hand( &hand_draw_params );
 }
 
-static void minutes_layer_update_proc( Layer *layer, GContext *ctx ) {
-  GRect layer_bounds = layer_get_bounds( layer );
-}
-
 void clock_init( Window *window ){
   window_layer = window_get_root_layer( window );
   window_set_background_color( window, GColorLightGray );
   GRect window_bounds = layer_get_bounds( window_layer );
   HAND_LAYER_DATA *seconds_layer_data = 0;
+  HAND_LAYER_DATA *minutes_layer_data = 0;
   
   outline_layer = layer_create( OUTLINE_RECT_FRAME );
   layer_set_update_proc( outline_layer, outline_layer_update_proc );
   layer_add_child( window_layer, outline_layer );
+
+  seconds_dial_layer = layer_create( SECONDS_RECT_FRAME );
+  layer_set_update_proc( seconds_dial_layer, seconds_dial_update_proc );
+  layer_add_child( outline_layer, seconds_dial_layer );
+
+  minutes_dial_layer = layer_create( MINUTES_RECT_FRAME );
+  layer_set_update_proc( minutes_dial_layer, minutes_dial_update_proc );
+  layer_add_child( seconds_dial_layer, minutes_dial_layer );
   
-  minutes_layer = layer_create( MINUTES_RECT_FRAME );
-  layer_set_update_proc( minutes_layer, minutes_layer_update_proc );
+  minutes_layer = layer_create_with_data( MINUTES_RECT_FRAME, sizeof( HAND_LAYER_DATA ) );
+  minutes_layer_data = (HAND_LAYER_DATA *) layer_get_data( minutes_layer ); 
+  minutes_layer_data->colour = PBL_IF_COLOR_ELSE( 0x000000, 0x000000 );
+  minutes_layer_data->length = MINUTES_HAND_LENGTH;
+  minutes_layer_data->tail_length = MINUTES_HAND_TAIL_LENGTH;
+  minutes_layer_data->width = MINUTES_HAND_THK;
+  minutes_layer_data->bounds = MINUTES_RECT_FRAME;
+  minutes_layer_data->hub_radius = MINUTES_HUB_RADIUS;
+  minutes_layer_data->current_angle = tm_time.tm_min;
+  minutes_layer_data->next_angle = tm_time.tm_min;
+  layer_set_update_proc( minutes_layer, minutes_hand_layer_update_proc );
   layer_add_child( outline_layer, minutes_layer );
 
   seconds_layer = layer_create_with_data( SECONDS_RECT_FRAME, sizeof( HAND_LAYER_DATA ) );
@@ -157,7 +207,7 @@ void clock_init( Window *window ){
   seconds_layer_data->current_angle = tm_time.tm_sec;
   seconds_layer_data->next_angle = tm_time.tm_sec;
   layer_set_update_proc( seconds_layer, seconds_hand_layer_update_proc );
-  layer_add_child( minutes_layer, seconds_layer );
+  layer_add_child( outline_layer, seconds_layer );
   
   tick_timer_service_subscribe( SECOND_UNIT, handle_clock_tick );
 }
@@ -165,5 +215,7 @@ void clock_init( Window *window ){
 void clock_deinit( void ) {
   if ( minutes_layer ) layer_destroy( minutes_layer );
   if ( seconds_layer ) layer_destroy( seconds_layer );
+  if ( minutes_dial_layer ) layer_destroy( minutes_dial_layer );
+  if ( seconds_dial_layer ) layer_destroy( seconds_dial_layer );
   if ( outline_layer ) layer_destroy( outline_layer );
 }
