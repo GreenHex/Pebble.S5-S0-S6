@@ -210,10 +210,11 @@ static void seconds_hand_layer_update_proc( Layer *layer, GContext *ctx ) {
   draw_clock_hand( &hand_draw_params );
 }
 
-static void make_label( TextLayer **p_label, GRect rect,  Layer* parent_layer, const char* str, GFont txt_font, GTextAlignment alignment ) {
+static void make_label( TextLayer **p_label, GRect rect,  Layer* parent_layer, const char* str, GFont txt_font,
+                       GColor colour, GTextAlignment alignment ) {
   *p_label = text_layer_create( rect );
   text_layer_set_background_color( *p_label, GColorClear );
-  text_layer_set_text_color( *p_label, GColorBlack );
+  text_layer_set_text_color( *p_label, colour );
   text_layer_set_text_alignment( *p_label, alignment );
   text_layer_set_font( *p_label, txt_font );
   text_layer_set_text( *p_label, str );
@@ -241,7 +242,7 @@ void clock_init( Window *window ){
   
   minutes_layer = layer_create_with_data( MINUTES_RECT_FRAME, sizeof( HAND_LAYER_DATA ) );
   minutes_layer_data = (HAND_LAYER_DATA *) layer_get_data( minutes_layer ); 
-  minutes_layer_data->colour = PBL_IF_COLOR_ELSE( 0x000000, 0x000000 );
+  minutes_layer_data->colour = PBL_IF_COLOR_ELSE( 0xFF0000, 0x000000 );
   minutes_layer_data->length = MINUTES_HAND_LENGTH;
   minutes_layer_data->tail_length = MINUTES_HAND_TAIL_LENGTH;
   minutes_layer_data->width = MINUTES_HAND_THK;
@@ -267,9 +268,9 @@ void clock_init( Window *window ){
   
   GFont txt_font = fonts_get_system_font( FONT_KEY_GOTHIC_14 );
   
-  make_label( &label_top_left, LABEL_TOP_LEFT_RECT, window_layer, "  EXIT", txt_font, GTextAlignmentLeft );
-  make_label( &label_top_right, LABEL_TOP_RIGHT_RECT, window_layer, "RESET  ", txt_font, GTextAlignmentRight );
-  make_label( &label_bottom_right, LABEL_BOTTOM_RIGHT_RECT, window_layer, "START/STOP  ", txt_font, GTextAlignmentRight );
+  make_label( &label_top_left, LABEL_TOP_LEFT_RECT, window_layer, " EXIT", txt_font, GColorDarkGray, GTextAlignmentLeft );
+  make_label( &label_top_right, LABEL_TOP_RIGHT_RECT, window_layer, "RESET ", txt_font, GColorRed, GTextAlignmentRight );
+  make_label( &label_bottom_right, LABEL_BOTTOM_RIGHT_RECT, window_layer, "START/STOP ", txt_font, GColorBlue, GTextAlignmentRight );
     
   tick_timer_service_subscribe( SECOND_UNIT, handle_clock_tick );
 }
