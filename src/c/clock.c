@@ -4,14 +4,17 @@
 
 #include <pebble.h>
 #include "clock.h"
+#include "utils.h"
+#include "animation.h"
 
 // #define DEBUG
 
+extern Layer *seconds_layer;
+
 static Layer *window_layer = 0;
 static Layer *outline_layer = 0;
-static Layer *seconds_dial_layer = 0;
 static Layer *minutes_dial_layer = 0;
-static Layer *seconds_layer = 0;
+static Layer *seconds_dial_layer = 0;
 static Layer *minutes_layer = 0;
 static TextLayer *label_top_left = 0;
 static TextLayer *label_top_right = 0;
@@ -21,59 +24,6 @@ static uint32_t seconds = 0;
 static uint32_t minutes = 0;
 static bool run_timer = false;
 static tm tm_time;
-
-static void print_pt( char *str, GPoint pt ) {
-  #ifdef DEBUG
-  APP_LOG( APP_LOG_LEVEL_INFO, "%s: ( %d, %d )", str, pt.x, pt.y );
-  #endif
-}
-
-static void print_rect( char *str, GRect rect ) {
-  #ifdef DEBUG
-  APP_LOG( APP_LOG_LEVEL_INFO, "%s: ( %d, %d, %d, %d )", str, rect.origin.x, rect.origin.y, rect.size.w, rect.size.h );
-  #endif
-}
-
-static void second_hand_uint32_setter( void *subject, uint32_t angle ) {
-  ( ( HAND_LAYER_DATA *) layer_get_data( (Layer *) subject ) )->current_angle = angle;
-  layer_mark_dirty( (Layer *) subject );
-}
-
-static uint32_t second_hand_uint32_getter( void *subject ) {
-  return ( ( HAND_LAYER_DATA *) layer_get_data( (Layer *) subject ) )->current_angle;
-}
-
-static const PropertyAnimationImplementation second_hand_animation_implementation = {
-  .base = {
-    .update = (AnimationUpdateImplementation) property_animation_update_uint32,
-  },
-    .accessors = {
-      .setter = { .uint32 = (const UInt32Setter) second_hand_uint32_setter },
-      .getter = { .uint32 = (const UInt32Getter) second_hand_uint32_getter },
-  },
-};
-
-static void start_seconds_animation( void ) {
-  HAND_LAYER_DATA *seconds_layer_data = (HAND_LAYER_DATA *) layer_get_data( seconds_layer );
-  
-  PropertyAnimation *seconds_hand_prop_animation = property_animation_create( &second_hand_animation_implementation, (void *) seconds_layer, NULL, NULL );
-  property_animation_from( seconds_hand_prop_animation, (void *) &( seconds_layer_data->current_angle ),
-                          sizeof( seconds_layer_data->current_angle ), true );
-  property_animation_to( seconds_hand_prop_animation, (void *) &( seconds_layer_data->next_angle ),
-                        sizeof( seconds_layer_data->next_angle ), true );
-  Animation *seconds_hand_animation = property_animation_get_animation( seconds_hand_prop_animation );
-  animation_set_curve( seconds_hand_animation, AnimationCurveLinear );
-  animation_set_delay( seconds_hand_animation, 0 );
-  animation_set_duration( seconds_hand_animation, 1000 );
-  
-  Animation **seconds_animation_array = (Animation**) malloc( ( NUM_ANIMATIONS ) * sizeof( Animation* ) );
-  seconds_animation_array[0] = seconds_hand_animation;
-  
-  Animation *spawn = animation_spawn_create_from_array( seconds_animation_array, NUM_ANIMATIONS );
-  animation_set_play_count( spawn, 1 );
-  animation_schedule( spawn );
-  free( seconds_animation_array );
-}
 
 static void handle_clock_tick( struct tm *tick_time, TimeUnits units_changed ) {
   tm_time = *tick_time; // copy to global, just for fun, as it is not used
@@ -93,30 +43,6 @@ static void handle_clock_tick( struct tm *tick_time, TimeUnits units_changed ) {
   APP_LOG( APP_LOG_LEVEL_INFO, "clock.c: %ld",  ( ( HAND_LAYER_DATA *) layer_get_data( seconds_layer ) )->next_angle );
   #endif
   start_seconds_animation();
-}
-
-static void draw_clock_hand( HAND_DRAW_PARAMS *pDP ) {
-  graphics_context_set_antialiased( pDP->ctx, true );
-  // dot outline
-  graphics_context_set_stroke_color( pDP->ctx, pDP->dot_outline_color );
-  graphics_context_set_stroke_width( pDP->ctx, 1 );
-  graphics_draw_circle( pDP->ctx, pDP->center_pt, pDP->dot_radius );
-  // hand outline
-  graphics_context_set_stroke_color( pDP->ctx, pDP->hand_outline_color );
-  graphics_context_set_stroke_width( pDP->ctx, pDP->hand_width + 2);
-  graphics_draw_line( pDP->ctx, pDP->center_pt, pDP->from_pt );
-  graphics_draw_line( pDP->ctx, pDP->center_pt, pDP->to_pt );
-  // hand
-  graphics_context_set_stroke_color( pDP->ctx, pDP->hand_color );
-  graphics_context_set_stroke_width( pDP->ctx, pDP->hand_width );
-  graphics_draw_line( pDP->ctx, pDP->center_pt, pDP->from_pt );
-  graphics_draw_line( pDP->ctx, pDP->center_pt, pDP->to_pt );
-  // dot
-  graphics_context_set_fill_color( pDP->ctx, pDP->dot_color );
-  graphics_fill_circle( pDP->ctx, pDP->center_pt, pDP->dot_radius - 1 );
-  // center
-  graphics_context_set_fill_color( pDP->ctx, GColorWhite );
-  graphics_fill_circle( pDP->ctx, pDP->center_pt, 1 );
 }
 
 static void outline_layer_update_proc( Layer *layer, GContext *ctx ) {
@@ -211,16 +137,6 @@ static void seconds_hand_layer_update_proc( Layer *layer, GContext *ctx ) {
   draw_clock_hand( &hand_draw_params );
 }
 
-static void make_label( TextLayer **p_label, GRect rect,  Layer* parent_layer, const char* str, GFont txt_font,
-                       GColor colour, GTextAlignment alignment ) {
-  *p_label = text_layer_create( rect );
-  text_layer_set_background_color( *p_label, GColorClear );
-  text_layer_set_text_color( *p_label, colour );
-  text_layer_set_text_alignment( *p_label, alignment );
-  text_layer_set_font( *p_label, txt_font );
-  text_layer_set_text( *p_label, str );
-  layer_add_child( parent_layer, text_layer_get_layer( *p_label ) );
-}
 
 void up_single_click_handler(ClickRecognizerRef recognizer, void *context) {
   Window *window = (Window *) context;
@@ -237,7 +153,7 @@ void up_single_click_handler(ClickRecognizerRef recognizer, void *context) {
   }
 }
 
-void down_single_click_handler(ClickRecognizerRef recognizer, void *context) {
+void down_single_click_handler( ClickRecognizerRef recognizer, void *context) {
   Window *window = (Window *) context;
   
   run_timer = !run_timer;

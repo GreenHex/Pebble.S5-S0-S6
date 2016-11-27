@@ -3,7 +3,6 @@
 //
 
 #include <pebble.h>
-#include "global.h"
 #include "clock.h"
 
 static Window *window = 0;
