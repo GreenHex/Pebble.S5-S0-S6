@@ -51,3 +51,21 @@ void make_label( TextLayer **p_label, GRect rect,  Layer* parent_layer, const ch
   text_layer_set_text( *p_label, str );
   layer_add_child( parent_layer, text_layer_get_layer( *p_label ) );
 }
+
+void draw_seconds_ticks( Layer *layer, GContext *ctx, GPathInfo gpath_info, int increment, int minor_radius ) {
+  GRect bounds = layer_get_bounds( layer );
+  GPoint center_pt = grect_center_point( &bounds );
+  GPath *gpath = gpath_create( &gpath_info );
+  graphics_context_set_antialiased( ctx, true );
+  
+  for ( int i = 0, angle = 0; i < 60; i += increment ) {
+    angle = TRIG_MAX_ANGLE * i / 60;
+    gpath_rotate_to( gpath, angle );
+    gpath_move_to( gpath, center_pt );
+    graphics_context_set_stroke_color( ctx, GColorDarkGray );
+    gpath_draw_outline( ctx, gpath );
+  }
+  graphics_context_set_fill_color( ctx, GColorWhite );
+  graphics_fill_circle( ctx, center_pt, minor_radius );
+  gpath_destroy( gpath );
+}

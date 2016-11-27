@@ -48,4 +48,3 @@ void start_seconds_animation( void ) {
   animation_schedule( spawn );
   free( seconds_animation_array );
 }
-

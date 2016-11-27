@@ -49,7 +49,7 @@ static void outline_layer_update_proc( Layer *layer, GContext *ctx ) {
   GRect layer_bounds = layer_get_bounds( layer );
   graphics_context_set_antialiased( ctx, true );
   graphics_context_set_fill_color( ctx, GColorDarkGray );
-  graphics_fill_rect( ctx, layer_bounds, layer_bounds.size.w / 2, GCornersAll );  
+  graphics_fill_rect( ctx, layer_bounds, layer_bounds.size.w / 2, GCornersAll );
 }
 
 static void seconds_dial_update_proc( Layer *layer, GContext *ctx ) {
@@ -57,6 +57,8 @@ static void seconds_dial_update_proc( Layer *layer, GContext *ctx ) {
   graphics_context_set_antialiased( ctx, true );
   graphics_context_set_fill_color( ctx, GColorWhite );
   graphics_fill_rect( ctx, layer_bounds, layer_bounds.size.w / 2, GCornersAll );
+  draw_seconds_ticks( layer, ctx, SEC_TICK, 1, SECONDS_LAYER_WIDTH / 2 - 5 );
+  draw_seconds_ticks( layer, ctx, SEC_TICK, 5, SECONDS_LAYER_WIDTH / 2 - 10 );
 }
 
 static void minutes_dial_update_proc( Layer *layer, GContext *ctx ) { 
@@ -67,6 +69,8 @@ static void minutes_dial_update_proc( Layer *layer, GContext *ctx ) {
   graphics_context_set_stroke_color( ctx, GColorLightGray );
   graphics_context_set_stroke_width( ctx, 1 );
   graphics_draw_circle( ctx, GPoint( layer_bounds.size.w / 2, layer_bounds.size.h / 2 ), layer_bounds.size.w / 2 - 1 );
+  draw_seconds_ticks( layer, ctx, MIN_TICK, 1, MINUTES_LAYER_WIDTH / 2 - 4 );
+  draw_seconds_ticks( layer, ctx, MIN_TICK, 5, MINUTES_LAYER_WIDTH / 2 - 8 );
 }
 
 static void minutes_hand_layer_update_proc( Layer *layer, GContext *ctx ) {
