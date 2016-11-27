@@ -1,2 +1,2 @@
 # Pebble.S5-S0-S6
-Analog chronometer with smooth seconds movement for the Pebble.
+Analog chronometer for the Pebble with smooth seconds movement.
