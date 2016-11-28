@@ -91,7 +91,7 @@ static void minutes_hand_layer_update_proc( Layer *layer, GContext *ctx ) {
     .y = ( -cos_lookup( min_tail_angle ) * MINUTES_HAND_TAIL_LENGTH / TRIG_MAX_RATIO ) + center_pt.y
   };
   
-  HAND_DRAW_PARAMS hand_draw_params = (HAND_DRAW_PARAMS) {
+  draw_clock_hand( & (HAND_DRAW_PARAMS) {
     .ctx = ctx,
     .center_pt = center_pt,
     .from_pt = min_end_point,
@@ -102,8 +102,7 @@ static void minutes_hand_layer_update_proc( Layer *layer, GContext *ctx ) {
     .dot_radius = minutes_layer_data->hub_radius,
     .dot_color = GColorFromHEX( minutes_layer_data->colour ),
     .dot_outline_color = GColorWhite
-  };
-  draw_clock_hand( &hand_draw_params );
+  } );
 }
 
 static void seconds_hand_layer_update_proc( Layer *layer, GContext *ctx ) {
@@ -126,7 +125,7 @@ static void seconds_hand_layer_update_proc( Layer *layer, GContext *ctx ) {
                    seconds_layer_data->tail_length / TRIG_MAX_RATIO ) + center_pt.y
   };
   
-  HAND_DRAW_PARAMS hand_draw_params = (HAND_DRAW_PARAMS) {
+  draw_clock_hand(  & (HAND_DRAW_PARAMS) {
     .ctx = ctx,
     .center_pt = center_pt,
     .from_pt = end_pt,
@@ -137,8 +136,7 @@ static void seconds_hand_layer_update_proc( Layer *layer, GContext *ctx ) {
     .dot_radius = seconds_layer_data->hub_radius,
     .dot_color = GColorFromHEX( seconds_layer_data->colour ),
     .dot_outline_color = GColorWhite
-  };
-  draw_clock_hand( &hand_draw_params );
+  } );
 }
 
 void up_single_click_handler(ClickRecognizerRef recognizer, void *context) {
@@ -175,8 +173,6 @@ void clock_init( Window *window ){
   window_layer = window_get_root_layer( window );
   window_set_background_color( window, GColorLightGray );
   GRect window_bounds = layer_get_bounds( window_layer );
-  HAND_LAYER_DATA *seconds_layer_data = 0;
-  HAND_LAYER_DATA *minutes_layer_data = 0;
   
   outline_layer = layer_create( OUTLINE_RECT_FRAME );
   layer_set_update_proc( outline_layer, outline_layer_update_proc );
@@ -191,8 +187,7 @@ void clock_init( Window *window ){
   layer_add_child( outline_layer, minutes_dial_layer );
   
   minutes_layer = layer_create_with_data( MINUTES_RECT_FRAME, sizeof( HAND_LAYER_DATA ) );
-  minutes_layer_data = (HAND_LAYER_DATA *) layer_get_data( minutes_layer ); 
-  *minutes_layer_data = (HAND_LAYER_DATA) {
+  *( (HAND_LAYER_DATA *) layer_get_data( minutes_layer ) ) = (HAND_LAYER_DATA) {
     .colour = PBL_IF_COLOR_ELSE( 0xFF0000, 0x000000 ),
     .length = MINUTES_HAND_LENGTH,
     .tail_length = MINUTES_HAND_TAIL_LENGTH,
@@ -206,8 +201,7 @@ void clock_init( Window *window ){
   layer_add_child( outline_layer, minutes_layer );
 
   seconds_layer = layer_create_with_data( SECONDS_RECT_FRAME, sizeof( HAND_LAYER_DATA ) );
-  seconds_layer_data = (HAND_LAYER_DATA *) layer_get_data( seconds_layer ); 
-  *seconds_layer_data = (HAND_LAYER_DATA) {
+  *( (HAND_LAYER_DATA *) layer_get_data( seconds_layer ) )= (HAND_LAYER_DATA) {
     .colour = PBL_IF_COLOR_ELSE( 0x000000, 0x000000 ),
     .length = SECONDS_HAND_LENGTH,
     .tail_length = SECONDS_HAND_TAIL_LENGTH,
@@ -222,9 +216,12 @@ void clock_init( Window *window ){
   
   GFont txt_font = fonts_get_system_font( FONT_KEY_GOTHIC_14 );
   
-  make_label( & (MAKE_LABEL_PARAMS) { &label_top_left, LABEL_TOP_LEFT_RECT, window_layer, " EXIT", txt_font, GColorDarkGray, GTextAlignmentLeft } );
-  make_label( & (MAKE_LABEL_PARAMS) { &label_top_right, LABEL_TOP_RIGHT_RECT, window_layer, "RESET ", txt_font, GColorRed, GTextAlignmentRight } );
-  make_label( & (MAKE_LABEL_PARAMS) { &label_bottom_right, LABEL_BOTTOM_RIGHT_RECT, window_layer, "START/STOP ", txt_font, GColorBlue, GTextAlignmentRight } );
+  make_label( & (MAKE_LABEL_PARAMS) { &label_top_left, LABEL_TOP_LEFT_RECT, window_layer, " EXIT", 
+                                     txt_font, GColorDarkGray, GTextAlignmentLeft } );
+  make_label( & (MAKE_LABEL_PARAMS) { &label_top_right, LABEL_TOP_RIGHT_RECT, window_layer, "RESET ",
+                                     txt_font, GColorRed, GTextAlignmentRight } );
+  make_label( & (MAKE_LABEL_PARAMS) { &label_bottom_right, LABEL_BOTTOM_RIGHT_RECT, window_layer, "START/STOP ",
+                                     txt_font, GColorBlue, GTextAlignmentRight } );
     
   window_set_click_config_provider( window, (ClickConfigProvider) config_provider );
 }
