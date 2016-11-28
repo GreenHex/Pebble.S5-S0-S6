@@ -57,7 +57,7 @@ void draw_seconds_ticks( DRAW_TICKS_PARAMS *pDTP ) {
   GPath *gpath = gpath_create( pDTP->p_gpath_info );
   graphics_context_set_antialiased( pDTP->ctx, true );
   
-  for ( int i = 0, angle = 0; i < 60; i += pDTP->increment ) {
+  for ( int i = 0, angle = 0; i < 30; i += pDTP->increment ) { // drawing half the ticks is *probably* more efficient
     angle = TRIG_MAX_ANGLE * i / 60;
     gpath_rotate_to( gpath, angle );
     gpath_move_to( gpath, center_pt );

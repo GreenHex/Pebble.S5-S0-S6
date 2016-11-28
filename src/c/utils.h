@@ -8,15 +8,15 @@
 
 static GPathInfo SEC_TICK = {
   2, (GPoint []) {
-    { 0, - ( SECONDS_LAYER_WIDTH / 2 - 2 )  },
-    { 0, 0 }
+    { 0, - ( SECONDS_LAYER_WIDTH / 2 - 2 ) },
+    { 0, ( SECONDS_LAYER_WIDTH / 2 - 2 ) }
   }
 };
 
 static GPathInfo MIN_TICK = {
   2, (GPoint []) {
-    { 0, - ( MINUTES_LAYER_WIDTH / 2 - 2 )  },
-    { 0, 0 }
+    { 0, - ( MINUTES_LAYER_WIDTH / 2 - 2 ) },
+    { 0, ( MINUTES_LAYER_WIDTH / 2 - 2 ) }
   }
 };
 
