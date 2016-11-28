@@ -19,6 +19,7 @@ static Layer *minutes_layer = 0;
 static TextLayer *label_top_left = 0;
 static TextLayer *label_top_right = 0;
 static TextLayer *label_bottom_right = 0;
+static TextLayer *label_seconds = 0;
 
 static uint32_t seconds = 0;
 static uint32_t minutes = 0;
@@ -201,7 +202,7 @@ void clock_init( Window *window ){
   layer_add_child( outline_layer, minutes_layer );
 
   seconds_layer = layer_create_with_data( SECONDS_RECT_FRAME, sizeof( HAND_LAYER_DATA ) );
-  *( (HAND_LAYER_DATA *) layer_get_data( seconds_layer ) )= (HAND_LAYER_DATA) {
+  *( (HAND_LAYER_DATA *) layer_get_data( seconds_layer ) ) = (HAND_LAYER_DATA) {
     .colour = PBL_IF_COLOR_ELSE( 0x000000, 0x000000 ),
     .length = SECONDS_HAND_LENGTH,
     .tail_length = SECONDS_HAND_TAIL_LENGTH,
@@ -219,14 +220,17 @@ void clock_init( Window *window ){
   make_label( & (MAKE_LABEL_PARAMS) { &label_top_left, LABEL_TOP_LEFT_RECT, window_layer, " EXIT", 
                                      txt_font, GColorDarkGray, GTextAlignmentLeft } );
   make_label( & (MAKE_LABEL_PARAMS) { &label_top_right, LABEL_TOP_RIGHT_RECT, window_layer, "RESET ",
-                                     txt_font, GColorRed, GTextAlignmentRight } );
+                                     txt_font, GColorFolly, GTextAlignmentRight } );
   make_label( & (MAKE_LABEL_PARAMS) { &label_bottom_right, LABEL_BOTTOM_RIGHT_RECT, window_layer, "START/STOP ",
-                                     txt_font, GColorBlue, GTextAlignmentRight } );
-    
+                                     txt_font, GColorCobaltBlue, GTextAlignmentRight } );
+  make_label( & (MAKE_LABEL_PARAMS) { &label_seconds, LABEL_SECS_RECT, seconds_layer, "30 SECONDS",
+                                     txt_font, GColorLightGray, GTextAlignmentCenter } );
+  
   window_set_click_config_provider( window, (ClickConfigProvider) config_provider );
 }
 
 void clock_deinit( void ) {
+  if ( label_seconds ) text_layer_destroy( label_seconds );
   if ( label_top_left ) text_layer_destroy( label_top_left );
   if ( label_top_right ) text_layer_destroy( label_top_right );
   if ( label_bottom_right ) text_layer_destroy( label_bottom_right );
